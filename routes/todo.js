@@ -4,6 +4,7 @@ const fs = require('fs');
 const { Parser } = require('json2csv');
 const multer = require('multer');
 const upload = multer({ dest: 'uploads/' });
+const path = require('path')
 
 
 const todo = require('../models/todo')
@@ -20,7 +21,16 @@ const storage = multer.diskStorage({
         cb(null,Date.now() + '-' + file.originalname)
     }
 })
+
+const csvFileFilter = (req,file,cb)=>{
+    const ext = path.extname(file.originalname)
+    if(ext !== '.csv'){
+        return cb(new Error('only Csv file is allowed'), false)
+    }
+    cb(null,true)
+}
 const picUpload = multer({storage:storage});
+const csvUpload = multer({storage:storage,fileFilter:csvFileFilter})
   
 
 router.get('/', async (req,res)=>{
@@ -80,7 +90,7 @@ router.get('/delete/todo/:id', async(req,res)=>{
     res.status(500).send('Failed  to delete task')
    }
 })
-router.post('/todos/upload', upload.single('file'), (req, res) => {
+router.post('/todos/upload', csvUpload.single('file'), (req, res) => {
     const filePath = req.file.path;
     const todos = [];
     const validStatuses = ['pending', 'completed'];
